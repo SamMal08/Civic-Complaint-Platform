@@ -148,7 +148,7 @@ export default function GovernmentDashboardPage() {
                     {filteredComplaints.map((complaint) => (
                       <tr
                         key={complaint.id}
-                        onClick={() => router.push(`/complaint/${complaint.id}`)}
+                        onClick={() => router.push(`/government/complaint/${complaint.id}`)}
                         className="cursor-pointer border-b border-neutral-100 last:border-b-0 hover:bg-neutral-50"
                       >
                         <td className="px-4 py-3 font-medium text-neutral-900">
@@ -186,7 +186,7 @@ export default function GovernmentDashboardPage() {
                   <button
                     key={complaint.id}
                     type="button"
-                    onClick={() => router.push(`/complaint/${complaint.id}`)}
+                    onClick={() => router.push(`/government/complaint/${complaint.id}`)}
                     className="flex flex-col items-start rounded-md border border-neutral-200 bg-white p-4 text-left hover:bg-neutral-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-neutral-900"
                   >
                     <div className="flex w-full items-start gap-2">
