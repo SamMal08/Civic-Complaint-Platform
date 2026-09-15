@@ -1,10 +1,71 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
+
+const MOCK_NOTIFICATIONS = [
+  {
+    id: 1,
+    message: "Your complaint has been submitted.",
+    time: "10 min ago",
+    read: false,
+  },
+  {
+    id: 2,
+    message: "Your complaint is under review.",
+    time: "2 hours ago",
+    read: false,
+  },
+  {
+    id: 3,
+    message: "Action has started on a complaint you are following.",
+    time: "Yesterday",
+    read: false,
+  },
+  {
+    id: 4,
+    message: "A complaint you follow has been resolved.",
+    time: "2 days ago",
+    read: true,
+  },
+  {
+    id: 5,
+    message: "Your complaint requires your attention.",
+    time: "3 days ago",
+    read: true,
+  },
+];
 
 export default function Navbar() {
   const [notifOpen, setNotifOpen] = useState(false);
   const [profileOpen, setProfileOpen] = useState(false);
+  const [notifications, setNotifications] = useState(MOCK_NOTIFICATIONS);
+
+  const notifRef = useRef(null);
+
+  const unreadCount = notifications.filter((n) => !n.read).length;
+
+  useEffect(() => {
+    function handleClickOutside(event) {
+      if (notifRef.current && !notifRef.current.contains(event.target)) {
+        setNotifOpen(false);
+      }
+    }
+    function handleEscape(event) {
+      if (event.key === "Escape") {
+        setNotifOpen(false);
+      }
+    }
+    document.addEventListener("mousedown", handleClickOutside);
+    document.addEventListener("keydown", handleEscape);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+      document.removeEventListener("keydown", handleEscape);
+    };
+  }, []);
+
+  const handleMarkAllAsRead = () => {
+    setNotifications((prev) => prev.map((n) => ({ ...n, read: true })));
+  };
 
   const navLinks = [
     { label: "Home", href: "/" },
@@ -66,13 +127,16 @@ export default function Navbar() {
           </a>
 
           {/* Notifications */}
-          <div className="relative">
+          <div className="relative" ref={notifRef}>
             <button
               type="button"
               onClick={() => setNotifOpen((prev) => !prev)}
-              aria-label="Notifications"
+              aria-label={`Notifications${
+                unreadCount > 0 ? `, ${unreadCount} unread` : ""
+              }`}
               aria-expanded={notifOpen}
-              className="inline-flex h-9 w-9 items-center justify-center rounded-md border border-neutral-200 bg-white text-neutral-700 hover:bg-neutral-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-neutral-900 focus-visible:ring-offset-2"
+              aria-haspopup="true"
+              className="relative inline-flex h-9 w-9 items-center justify-center rounded-md border border-neutral-200 bg-white text-neutral-700 hover:bg-neutral-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-neutral-900 focus-visible:ring-offset-2"
             >
               <svg
                 xmlns="http://www.w3.org/2000/svg"
@@ -88,7 +152,69 @@ export default function Navbar() {
                 <path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9" />
                 <path d="M13.73 21a2 2 0 0 1-3.46 0" />
               </svg>
+              {unreadCount > 0 && (
+                <span
+                  className="absolute right-1 top-1 h-2 w-2 rounded-full bg-red-500"
+                  aria-hidden="true"
+                />
+              )}
             </button>
+
+            {notifOpen && (
+              <div
+                role="menu"
+                aria-label="Notifications"
+                className="absolute right-0 z-10 mt-2 w-80 max-w-[calc(100vw-2rem)] rounded-md border border-neutral-200 bg-white shadow-md"
+              >
+                <div className="flex items-center justify-between border-b border-neutral-200 px-4 py-3">
+                  <p className="text-sm font-semibold text-neutral-900">
+                    Notifications
+                  </p>
+                  {unreadCount > 0 && (
+                    <button
+                      type="button"
+                      onClick={handleMarkAllAsRead}
+                      className="text-xs font-medium text-neutral-600 hover:text-neutral-900 focus:outline-none focus-visible:ring-2 focus-visible:ring-neutral-900 focus-visible:ring-offset-2 rounded-sm"
+                    >
+                      Mark all as read
+                    </button>
+                  )}
+                </div>
+
+                <ul className="max-h-80 overflow-y-auto">
+                  {notifications.map((notification) => (
+                    <li
+                      key={notification.id}
+                      role="menuitem"
+                      className="flex items-start gap-2 border-b border-neutral-100 px-4 py-3 last:border-b-0 hover:bg-neutral-50"
+                    >
+                      <span
+                        className={`mt-1.5 h-2 w-2 flex-shrink-0 rounded-full ${
+                          notification.read
+                            ? "bg-transparent"
+                            : "bg-neutral-900"
+                        }`}
+                        aria-hidden="true"
+                      />
+                      <div className="min-w-0 flex-1">
+                        <p
+                          className={`text-sm ${
+                            notification.read
+                              ? "text-neutral-500"
+                              : "font-medium text-neutral-900"
+                          }`}
+                        >
+                          {notification.message}
+                        </p>
+                        <p className="mt-0.5 text-xs text-neutral-400">
+                          {notification.time}
+                        </p>
+                      </div>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
           </div>
 
           {/* Profile */}
