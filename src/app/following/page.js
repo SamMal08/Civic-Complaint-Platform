@@ -1,20 +1,54 @@
 "use client";
 
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import ComplaintCard from "@/components/ComplaintCard";
-import { complaints } from "@/data/complaints";
+import { complaints as fallbackComplaints } from "@/data/complaints";
+import { supabase, isSupabaseConfigured, mapComplaintFromDb } from "@/lib/supabase";
 
 // PROTOTYPE ONLY: without authentication, we simulate "followed complaints"
-// by selecting a fixed subset of complaint IDs from the shared mock data.
-// Replace this with a real user-scoped "following" list once auth/backend exists.
+// by selecting a fixed subset of complaint IDs.
 const FOLLOWED_COMPLAINT_IDS = [1, 3];
 
 export default function FollowingPage() {
   const router = useRouter();
+  const [followedComplaints, setFollowedComplaints] = useState([]);
+  const [loading, setLoading] = useState(true);
 
-  const followedComplaints = complaints.filter((c) =>
-    FOLLOWED_COMPLAINT_IDS.includes(c.id)
-  );
+  useEffect(() => {
+    async function loadFollowed() {
+      if (!isSupabaseConfigured || !supabase) {
+        setFollowedComplaints(
+          fallbackComplaints.filter((c) => FOLLOWED_COMPLAINT_IDS.includes(c.id))
+        );
+        setLoading(false);
+        return;
+      }
+
+      try {
+        const { data, error } = await supabase
+          .from("complaints")
+          .select("*")
+          .in("id", FOLLOWED_COMPLAINT_IDS);
+
+        if (error || !data || data.length === 0) {
+          setFollowedComplaints(
+            fallbackComplaints.filter((c) => FOLLOWED_COMPLAINT_IDS.includes(c.id))
+          );
+        } else {
+          setFollowedComplaints(data.map(mapComplaintFromDb));
+        }
+      } catch (err) {
+        setFollowedComplaints(
+          fallbackComplaints.filter((c) => FOLLOWED_COMPLAINT_IDS.includes(c.id))
+        );
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    loadFollowed();
+  }, []);
 
   return (
     <div className="min-h-screen bg-neutral-50">
@@ -27,7 +61,14 @@ export default function FollowingPage() {
       </header>
 
       <main className="mx-auto w-full max-w-5xl px-4 py-6 sm:px-6 lg:px-8">
-        {followedComplaints.length === 0 ? (
+        {loading ? (
+          <div className="flex min-h-[240px] items-center justify-center">
+            <div
+              className="h-7 w-7 animate-spin rounded-full border-2 border-neutral-300 border-t-neutral-900"
+              aria-hidden="true"
+            />
+          </div>
+        ) : followedComplaints.length === 0 ? (
           <EmptyFollowingState />
         ) : (
           <section

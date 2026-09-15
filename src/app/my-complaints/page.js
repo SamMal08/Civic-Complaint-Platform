@@ -1,18 +1,49 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import ComplaintCard from "@/components/ComplaintCard";
-import { complaints } from "@/data/complaints";
-
-// PROTOTYPE ONLY: without authentication, we simulate "my complaints" by
-// selecting a fixed subset of complaint IDs from the shared mock data.
-// Replace this with a real user-scoped query once auth/backend exists.
-const MY_COMPLAINT_IDS = [1, 2];
+import { getCitizenId } from "@/lib/citizen";
+import { supabase, isSupabaseConfigured, mapComplaintFromDb } from "@/lib/supabase";
 
 export default function MyComplaintsPage() {
   const router = useRouter();
+  const [myComplaints, setMyComplaints] = useState([]);
+  const [loading, setLoading] = useState(true);
 
-  const myComplaints = complaints.filter((c) => MY_COMPLAINT_IDS.includes(c.id));
+  useEffect(() => {
+    async function loadMyComplaints() {
+      const citizenId = getCitizenId();
+
+      if (!isSupabaseConfigured || !supabase) {
+        setMyComplaints([]);
+        setLoading(false);
+        return;
+      }
+
+      try {
+        const { data, error } = await supabase
+          .from("complaints")
+          .select("*")
+          .eq("citizen_id", citizenId)
+          .order("created_at", { ascending: false });
+
+        if (error) {
+          console.error("Error fetching citizen complaints:", error);
+          setMyComplaints([]);
+        } else if (data) {
+          setMyComplaints(data.map(mapComplaintFromDb));
+        }
+      } catch (err) {
+        console.error("Failed to fetch my complaints:", err);
+        setMyComplaints([]);
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    loadMyComplaints();
+  }, []);
 
   return (
     <div className="min-h-screen bg-neutral-50">
@@ -25,7 +56,14 @@ export default function MyComplaintsPage() {
       </header>
 
       <main className="mx-auto w-full max-w-5xl px-4 py-6 sm:px-6 lg:px-8">
-        {myComplaints.length === 0 ? (
+        {loading ? (
+          <div className="flex min-h-[240px] items-center justify-center">
+            <div
+              className="h-7 w-7 animate-spin rounded-full border-2 border-neutral-300 border-t-neutral-900"
+              aria-hidden="true"
+            />
+          </div>
+        ) : myComplaints.length === 0 ? (
           <section
             aria-label="No complaints"
             className="flex min-h-[240px] flex-col items-center justify-center rounded-md border border-neutral-200 bg-white px-4 py-16 text-center"
@@ -54,4 +92,4 @@ export default function MyComplaintsPage() {
       </main>
     </div>
   );
-}
+}

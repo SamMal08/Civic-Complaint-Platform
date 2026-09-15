@@ -1,8 +1,9 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { complaints } from "@/data/complaints";
+import { complaints as fallbackComplaints } from "@/data/complaints";
+import { supabase, isSupabaseConfigured, mapComplaintFromDb } from "@/lib/supabase";
 
 const PRIORITY_STYLES = {
   high: "bg-red-500",
@@ -10,31 +11,81 @@ const PRIORITY_STYLES = {
   low: "bg-green-500",
 };
 
-const STATUS_OPTIONS = ["All", ...Array.from(new Set(complaints.map((c) => c.status)))];
-const CATEGORY_OPTIONS = ["All", ...Array.from(new Set(complaints.map((c) => c.category)))];
+const STATUS_OPTIONS = [
+  "All",
+  "Submitted",
+  "Under Review",
+  "Action in Progress",
+  "Resolved",
+];
+const CATEGORY_OPTIONS = [
+  "All",
+  "Roads",
+  "Streetlight",
+  "Waste",
+  "Water",
+  "Traffic",
+  "Environment",
+];
 const PRIORITY_OPTIONS = ["All", "High", "Medium", "Low"];
 
 export default function GovernmentDashboardPage() {
   const router = useRouter();
+
+  const [complaintList, setComplaintList] = useState([]);
+  const [loading, setLoading] = useState(true);
 
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState("All");
   const [categoryFilter, setCategoryFilter] = useState("All");
   const [priorityFilter, setPriorityFilter] = useState("All");
 
+  useEffect(() => {
+    async function loadComplaints() {
+      if (!isSupabaseConfigured || !supabase) {
+        setComplaintList(fallbackComplaints);
+        setLoading(false);
+        return;
+      }
+
+      try {
+        const { data, error } = await supabase
+          .from("complaints")
+          .select("*")
+          .order("created_at", { ascending: false });
+
+        if (error) {
+          console.error("Error fetching complaints for government:", error);
+          setComplaintList(fallbackComplaints);
+        } else if (data && data.length > 0) {
+          setComplaintList(data.map(mapComplaintFromDb));
+        } else {
+          setComplaintList(fallbackComplaints);
+        }
+      } catch (err) {
+        console.error("Government dashboard load error:", err);
+        setComplaintList(fallbackComplaints);
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    loadComplaints();
+  }, []);
+
   const stats = useMemo(() => {
     return {
-      total: complaints.length,
-      underReview: complaints.filter((c) => c.status === "Under Review").length,
-      inProgress: complaints.filter((c) => c.status === "Action in Progress").length,
-      resolved: complaints.filter((c) => c.status === "Resolved").length,
+      total: complaintList.length,
+      underReview: complaintList.filter((c) => c.status === "Under Review").length,
+      inProgress: complaintList.filter((c) => c.status === "Action in Progress").length,
+      resolved: complaintList.filter((c) => c.status === "Resolved").length,
     };
-  }, []);
+  }, [complaintList]);
 
   const filteredComplaints = useMemo(() => {
     const query = searchQuery.trim().toLowerCase();
 
-    return complaints.filter((complaint) => {
+    return complaintList.filter((complaint) => {
       const matchesSearch =
         query.length === 0 ||
         complaint.title.toLowerCase().includes(query) ||
@@ -49,7 +100,7 @@ export default function GovernmentDashboardPage() {
 
       return matchesSearch && matchesStatus && matchesCategory && matchesPriority;
     });
-  }, [searchQuery, statusFilter, categoryFilter, priorityFilter]);
+  }, [complaintList, searchQuery, statusFilter, categoryFilter, priorityFilter]);
 
   return (
     <div className="min-h-screen bg-neutral-50">

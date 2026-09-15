@@ -3,7 +3,13 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { complaints } from "@/data/complaints";
+import { complaints as fallbackComplaints } from "@/data/complaints";
+import {
+  supabase,
+  isSupabaseConfigured,
+  getGovernmentSupabase,
+  mapComplaintFromDb,
+} from "@/lib/supabase";
 
 const STATUS_OPTIONS = ["Submitted", "Under Review", "Action in Progress", "Resolved"];
 
@@ -17,24 +23,8 @@ export default function GovernmentComplaintPage({ params }) {
   const router = useRouter();
 
   const [complaintId, setComplaintId] = useState(null);
-  const [paramsLoaded, setParamsLoaded] = useState(false);
-
-  useEffect(() => {
-    let isMounted = true;
-    Promise.resolve(params).then((resolved) => {
-      if (isMounted) {
-        setComplaintId(Number(resolved.id));
-        setParamsLoaded(true);
-      }
-    });
-    return () => {
-      isMounted = false;
-    };
-  }, [params]);
-
-  const complaint = complaintId !== null
-    ? complaints.find((c) => c.id === complaintId)
-    : null;
+  const [complaint, setComplaint] = useState(null);
+  const [loading, setLoading] = useState(true);
 
   const [status, setStatus] = useState("");
   const [actionTaken, setActionTaken] = useState("");
@@ -42,22 +32,116 @@ export default function GovernmentComplaintPage({ params }) {
   const [expectedResolutionDate, setExpectedResolutionDate] = useState("");
   const [resolutionDate, setResolutionDate] = useState("");
   const [showSuccess, setShowSuccess] = useState(false);
+  const [errorMessage, setErrorMessage] = useState("");
+  const [isSaving, setIsSaving] = useState(false);
   const [currentStatus, setCurrentStatus] = useState("");
 
   useEffect(() => {
-    if (complaint) {
-      setStatus(complaint.status);
-      setCurrentStatus(complaint.status);
-    }
-  }, [complaint]);
+    let isMounted = true;
+    Promise.resolve(params).then(async (resolved) => {
+      if (!isMounted) return;
+      const id = resolved.id;
+      setComplaintId(id);
 
-  const handleUpdate = () => {
+      if (!isSupabaseConfigured || !supabase) {
+        const found = fallbackComplaints.find((c) => String(c.id) === String(id));
+        if (isMounted) {
+          setComplaint(found || null);
+          if (found) {
+            setStatus(found.status);
+            setCurrentStatus(found.status);
+          }
+          setLoading(false);
+        }
+        return;
+      }
+
+      try {
+        const { data, error } = await supabase
+          .from("complaints")
+          .select("*")
+          .eq("id", id)
+          .single();
+
+        if (error || !data) {
+          console.error("Complaint not found in Supabase, checking fallback:", error);
+          const found = fallbackComplaints.find((c) => String(c.id) === String(id));
+          if (isMounted) {
+            setComplaint(found || null);
+            if (found) {
+              setStatus(found.status);
+              setCurrentStatus(found.status);
+            }
+          }
+        } else if (isMounted) {
+          const mapped = mapComplaintFromDb(data);
+          setComplaint(mapped);
+          setStatus(mapped.status || "Submitted");
+          setCurrentStatus(mapped.status || "Submitted");
+          setActionTaken(mapped.actionTaken || "");
+          setResolutionDetails(mapped.resolutionDetails || "");
+          setExpectedResolutionDate(mapped.expectedResolutionDate || "");
+          setResolutionDate(mapped.resolutionDate || "");
+        }
+      } catch (err) {
+        console.error("Error loading complaint:", err);
+      } finally {
+        if (isMounted) setLoading(false);
+      }
+    });
+
+    return () => {
+      isMounted = false;
+    };
+  }, [params]);
+
+  const handleUpdate = async () => {
+    setIsSaving(true);
+    setShowSuccess(false);
+    setErrorMessage("");
+
+    const client = getGovernmentSupabase() || supabase;
+    if (isSupabaseConfigured && client && complaintId) {
+      try {
+        const { error } = await client
+          .from("complaints")
+          .update({
+            status,
+            action_taken: actionTaken,
+            resolution_details: resolutionDetails,
+            expected_resolution_date: expectedResolutionDate || null,
+            resolution_date: resolutionDate || null,
+          })
+          .eq("id", complaintId);
+
+        if (error) {
+          console.error("Failed to update complaint in Supabase:", error);
+          setErrorMessage("Failed to save updates to database. Please check permissions.");
+          setIsSaving(false);
+          return;
+        }
+      } catch (err) {
+        console.error("Error saving updates:", err);
+        setErrorMessage("Network error while saving updates.");
+        setIsSaving(false);
+        return;
+      }
+    }
+
     setCurrentStatus(status);
     setShowSuccess(true);
+    setIsSaving(false);
   };
 
-  if (!paramsLoaded) {
-    return null;
+  if (loading) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-neutral-50">
+        <div
+          className="h-8 w-8 animate-spin rounded-full border-2 border-neutral-300 border-t-neutral-900"
+          aria-hidden="true"
+        />
+      </div>
+    );
   }
 
   if (!complaint) {
@@ -335,13 +419,30 @@ export default function GovernmentComplaintPage({ params }) {
               </p>
             )}
 
+            {errorMessage && (
+              <p
+                role="alert"
+                className="rounded-md border border-red-200 bg-red-50 px-3 py-2 text-sm font-medium text-red-700"
+              >
+                {errorMessage}
+              </p>
+            )}
+
             <div className="flex flex-col gap-2 sm:flex-row">
               <button
                 type="button"
                 onClick={handleUpdate}
-                className="flex-1 rounded-md bg-neutral-900 px-4 py-2.5 text-sm font-medium text-white hover:bg-neutral-800 focus:outline-none focus-visible:ring-2 focus-visible:ring-neutral-900 focus-visible:ring-offset-2 sm:flex-none"
+                disabled={isSaving}
+                className="flex flex-1 items-center justify-center gap-2 rounded-md bg-neutral-900 px-4 py-2.5 text-sm font-medium text-white hover:bg-neutral-800 focus:outline-none focus-visible:ring-2 focus-visible:ring-neutral-900 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-60 sm:flex-none"
               >
-                Update Complaint
+                {isSaving ? (
+                  <>
+                    <span className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" />
+                    <span>Saving...</span>
+                  </>
+                ) : (
+                  "Update Complaint"
+                )}
               </button>
               <button
                 type="button"

@@ -1,6 +1,9 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
+import Link from "next/link";
+import { supabase, isSupabaseConfigured } from "@/lib/supabase";
+import { getCitizenId } from "@/lib/citizen";
 
 const STEPS = {
   ISSUE: "issue",
@@ -79,6 +82,8 @@ export default function RaiseComplaintPage() {
   const [assessedCategory, setAssessedCategory] = useState("");
   const [assessedPriority, setAssessedPriority] = useState("low");
   const [similarFound, setSimilarFound] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [submitError, setSubmitError] = useState("");
 
   const fileInputRef = useRef(null);
 
@@ -141,7 +146,52 @@ export default function RaiseComplaintPage() {
     setStep(STEPS.CONFIRMATION);
   };
 
-  const handleSubmitComplaint = () => {
+  const handleSubmitComplaint = async () => {
+    setIsSubmitting(true);
+    setSubmitError("");
+
+    const cleanDesc = description.trim();
+    // Derive a readable title from the first sentence or first 70 characters
+    const firstSentence = cleanDesc.split(/[.\n]/)[0]?.trim();
+    const title =
+      firstSentence && firstSentence.length <= 80
+        ? firstSentence
+        : cleanDesc.slice(0, 75).trim() + (cleanDesc.length > 75 ? "..." : "");
+
+    const citizenId = getCitizenId();
+
+    if (isSupabaseConfigured && supabase) {
+      try {
+        const { error } = await supabase.from("complaints").insert([
+          {
+            title: title || "Civic complaint",
+            description: cleanDesc,
+            category: assessedCategory || CATEGORIES[0],
+            location: selectedLocation,
+            priority: assessedPriority || "low",
+            status: "Submitted",
+            image: null,
+            citizen_id: citizenId,
+            support_count: 1,
+            dont_support_count: 0,
+          },
+        ]);
+
+        if (error) {
+          console.error("Error submitting complaint to Supabase:", error);
+          setSubmitError("Failed to submit complaint. Please try again.");
+          setIsSubmitting(false);
+          return;
+        }
+      } catch (err) {
+        console.error("Submission request error:", err);
+        setSubmitError("Network error. Please try again.");
+        setIsSubmitting(false);
+        return;
+      }
+    }
+
+    setIsSubmitting(false);
     setStep(STEPS.SUCCESS);
   };
 
@@ -149,12 +199,12 @@ export default function RaiseComplaintPage() {
     <div className="min-h-screen bg-neutral-50">
       <header className="border-b border-neutral-200 bg-white">
         <div className="mx-auto flex h-16 max-w-2xl items-center px-4 sm:px-6">
-          <a
+          <Link
             href="/"
             className="rounded-sm text-sm font-medium text-neutral-600 hover:text-neutral-900 focus:outline-none focus-visible:ring-2 focus-visible:ring-neutral-900 focus-visible:ring-offset-2"
           >
             ← Back to Darpan
-          </a>
+          </Link>
         </div>
       </header>
 
@@ -482,12 +532,26 @@ export default function RaiseComplaintPage() {
               )}
             </div>
 
+            {submitError && (
+              <p className="mt-3 text-xs font-medium text-red-600" role="alert">
+                {submitError}
+              </p>
+            )}
+
             <button
               type="button"
               onClick={handleSubmitComplaint}
-              className="mt-6 w-full rounded-md bg-neutral-900 px-4 py-2.5 text-sm font-medium text-white hover:bg-neutral-800 focus:outline-none focus-visible:ring-2 focus-visible:ring-neutral-900 focus-visible:ring-offset-2"
+              disabled={isSubmitting}
+              className="mt-6 flex w-full items-center justify-center gap-2 rounded-md bg-neutral-900 px-4 py-2.5 text-sm font-medium text-white hover:bg-neutral-800 focus:outline-none focus-visible:ring-2 focus-visible:ring-neutral-900 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-60"
             >
-              Submit Complaint
+              {isSubmitting ? (
+                <>
+                  <span className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" />
+                  <span>Submitting Complaint...</span>
+                </>
+              ) : (
+                "Submit Complaint"
+              )}
             </button>
           </section>
         )}
@@ -521,12 +585,12 @@ export default function RaiseComplaintPage() {
               Your complaint has been recorded and will be reviewed by the
               concerned authority.
             </p>
-            <a
+            <Link
               href="/"
               className="mt-6 rounded-md border border-neutral-300 bg-white px-4 py-2.5 text-sm font-medium text-neutral-800 hover:bg-neutral-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-neutral-900 focus-visible:ring-offset-2"
             >
               Return to Home
-            </a>
+            </Link>
           </section>
         )}
       </main>
