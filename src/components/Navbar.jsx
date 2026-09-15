@@ -10,6 +10,7 @@ export default function Navbar() {
     { label: "Home", href: "/" },
     { label: "Nearby", href: "/nearby" },
     { label: "My Complaints", href: "/my-complaints" },
+    { label: "Following", href: "/following" },
   ];
 
   return (
@@ -22,7 +23,7 @@ export default function Navbar() {
         <div className="flex items-center">
           <a
             href="/"
-            className="rounded-sm text-lg font-semibold tracking-tight text-neutral-900 focus:outline-none focus-visible:ring-2 focus-visible:ring-neutral-900 focus-visible:ring-offset-2"
+            className="text-lg font-semibold tracking-tight text-neutral-900 focus:outline-none focus-visible:ring-2 focus-visible:ring-neutral-900 focus-visible:ring-offset-2 rounded-sm"
           >
             Darpan
           </a>
@@ -46,7 +47,7 @@ export default function Navbar() {
           {/* Raise Complaint - Desktop */}
           <a
             href="/raise-complaint"
-            className="hidden items-center gap-1.5 rounded-md border border-neutral-900 bg-neutral-900 px-4 py-2 text-sm font-medium text-white hover:bg-neutral-800 focus:outline-none focus-visible:ring-2 focus-visible:ring-neutral-900 focus-visible:ring-offset-2 md:inline-flex"
+            className="hidden md:inline-flex items-center gap-1.5 rounded-md border border-neutral-900 bg-neutral-900 px-4 py-2 text-sm font-medium text-white hover:bg-neutral-800 focus:outline-none focus-visible:ring-2 focus-visible:ring-neutral-900 focus-visible:ring-offset-2"
           >
             <svg
               xmlns="http://www.w3.org/2000/svg"
@@ -119,7 +120,7 @@ export default function Navbar() {
           {/* Login - Desktop */}
           <a
             href="/login"
-            className="hidden items-center rounded-md border border-neutral-300 bg-white px-4 py-2 text-sm font-medium text-neutral-900 hover:bg-neutral-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-neutral-900 focus-visible:ring-offset-2 md:inline-flex"
+            className="hidden md:inline-flex items-center rounded-md border border-neutral-300 bg-white px-4 py-2 text-sm font-medium text-neutral-900 hover:bg-neutral-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-neutral-900 focus-visible:ring-offset-2"
           >
             Login
           </a>
