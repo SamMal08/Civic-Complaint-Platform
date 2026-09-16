@@ -193,6 +193,7 @@ export default function RaiseComplaintPage() {
   }
 
   setIsSubmitting(false);
+  setStep(STEPS.SUBMITTED);
 };
 
   return (
