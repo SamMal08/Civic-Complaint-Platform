@@ -147,53 +147,53 @@ export default function RaiseComplaintPage() {
   };
 
   const handleSubmitComplaint = async () => {
-    setIsSubmitting(true);
-    setSubmitError("");
+  setIsSubmitting(true);
+  setSubmitError("");
 
-    const cleanDesc = description.trim();
-    // Derive a readable title from the first sentence or first 70 characters
-    const firstSentence = cleanDesc.split(/[.\n]/)[0]?.trim();
-    const title =
-      firstSentence && firstSentence.length <= 80
-        ? firstSentence
-        : cleanDesc.slice(0, 75).trim() + (cleanDesc.length > 75 ? "..." : "");
+  const cleanDesc = description.trim();
 
-    const citizenId = getCitizenId();
+  const firstSentence = cleanDesc.split(/[.\n]/)[0]?.trim();
+  const title =
+    firstSentence && firstSentence.length <= 80
+      ? firstSentence
+      : cleanDesc.slice(0, 75).trim() + (cleanDesc.length > 75 ? "..." : "");
 
-    if (isSupabaseConfigured && supabase) {
-      try {
-        const { error } = await supabase.from("complaints").insert([
-          {
-            title: title || "Civic complaint",
-            description: cleanDesc,
-            category: assessedCategory || CATEGORIES[0],
-            location: selectedLocation,
-            priority: assessedPriority || "low",
-            status: "Submitted",
-            image: null,
-            citizen_id: citizenId,
-            support_count: 1,
-            dont_support_count: 0,
-          },
-        ]);
+  const citizenId = getCitizenId();
 
-        if (error) {
-          console.error("Error submitting complaint to Supabase:", error);
-          setSubmitError("Failed to submit complaint. Please try again.");
-          setIsSubmitting(false);
-          return;
+  if (isSupabaseConfigured && supabase) {
+    try {
+      const { data: newComplaintId, error } = await supabase.rpc(
+        "create_complaint_with_creator",
+        {
+          p_title: title || "Civic complaint",
+          p_description: cleanDesc,
+          p_category: assessedCategory || CATEGORIES[0],
+          p_location: selectedLocation,
+          p_priority: assessedPriority || "low",
+          p_status: "Submitted",
+          p_image: null,
+          p_citizen_id: citizenId,
+          p_support_count: 1,
+          p_dont_support_count: 0,
         }
-      } catch (err) {
-        console.error("Submission request error:", err);
-        setSubmitError("Network error. Please try again.");
+      );
+
+      if (error || !newComplaintId) {
+        console.error("Error submitting complaint to Supabase:", error);
+        setSubmitError("Failed to submit complaint. Please try again.");
         setIsSubmitting(false);
         return;
       }
+    } catch (err) {
+      console.error("Submission request error:", err);
+      setSubmitError("Network error. Please try again.");
+      setIsSubmitting(false);
+      return;
     }
+  }
 
-    setIsSubmitting(false);
-    setStep(STEPS.SUCCESS);
-  };
+  setIsSubmitting(false);
+};
 
   return (
     <div className="min-h-screen bg-neutral-50">
