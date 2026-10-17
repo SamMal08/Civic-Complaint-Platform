@@ -1,3 +1,4 @@
+const { computePriority } = require("../services/priorityService");
 const Issue = require("../models/Issue");
 const User = require("../models/User");
 const Timeline = require("../models/Timeline");
@@ -133,24 +134,25 @@ async function getIssues(req, res, next) {
   try {
     const { category, status, severity, limit = 50, page = 1 } = req.query;
     const filter = {};
-
     if (category) filter.category = category;
     if (status) filter.status = status;
     if (severity) filter.severity = parseInt(severity, 10);
 
-    const issues = await Issue.find(filter)
-      .sort({ priorityScore: -1, createdAt: -1 })
-      .skip((page - 1) * limit)
-      .limit(parseInt(limit, 10));
+    const scored = (await Issue.find(filter)).map((i) => {
+      const o = i.toObject();
+      o.priorityScore = computePriority(i); // fresh, because age changes
+      return o;
+    });
+    scored.sort((a, b) => b.priorityScore - a.priorityScore || new Date(b.createdAt) - new Date(a.createdAt));
 
-    const total = await Issue.countDocuments(filter);
-
+    const lim = parseInt(limit, 10);
+    const pg = parseInt(page, 10);
     res.json({
       success: true,
-      total,
-      page: parseInt(page, 10),
-      count: issues.length,
-      issues
+      total: scored.length,
+      page: pg,
+      count: scored.slice((pg - 1) * lim, pg * lim).length,
+      issues: scored.slice((pg - 1) * lim, pg * lim)
     });
   } catch (error) {
     next(error);

@@ -38,6 +38,7 @@ app.get("/api/health", (req, res) => {
 app.use("/api/auth", authRoutes);
 app.use("/api/issues", issueRoutes);
 app.use("/api/officer", officerRoutes);
+app.use("/api/officer", require("./routes/prepRoutes"));
 app.use("/api/users", privacyRoutes);
 
 // Error Handling
