@@ -327,7 +327,7 @@ async function voteIssue(req, res, next) {
 async function validateWithAi(req, res, next) {
   try {
     const { aiService, providerName } = require("../services/aiService");
-    const { title, description, category, latitude, longitude, imageCid } = req.body;
+    const { title, description, category, latitude, longitude, imageCid, imageBase64, imageMimeType } = req.body;
 
     if (!title || !description) {
       return res.status(400).json({ success: false, error: "title and description are required" });
@@ -336,7 +336,7 @@ async function validateWithAi(req, res, next) {
     const validation = await aiService.validateComplaint({ title, description, category });
     const severityAssessment = await aiService.assessSeverity({ title, description, category });
     const categorySuggestion = await aiService.suggestCategory({ title, description });
-    const imageAnalysis = await aiService.analyzeImage({ imageCidOrUrl: imageCid, description, category });
+    const imageAnalysis = await aiService.analyzeImage({ imageBase64, imageMimeType, imageCidOrUrl: imageCid, description, category });
 
     let duplicateCheck = { isDuplicate: false, matches: [] };
     if (latitude !== undefined && longitude !== undefined) {
