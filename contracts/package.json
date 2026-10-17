@@ -1,0 +1,21 @@
+{
+  "name": "darpan-contracts",
+  "version": "1.0.0",
+  "description": "Smart contracts for Darpan Civic Complaint Platform",
+  "scripts": {
+    "test": "hardhat test --config hardhat.config.js",
+    "compile": "hardhat compile --config hardhat.config.js",
+    "deploy": "hardhat run scripts/deploy.js --config hardhat.config.js",
+    "deploy:local": "hardhat run scripts/deploy.js --network localhost --config hardhat.config.js",
+    "node": "hardhat node --config hardhat.config.js"
+  },
+  "dependencies": {
+    "@openzeppelin/contracts": "^5.2.0",
+    "dotenv": "^16.4.7"
+  },
+  "devDependencies": {
+    "@nomicfoundation/hardhat-toolbox": "^5.0.0",
+    "ethers": "^6.13.5",
+    "hardhat": "^2.22.18"
+  }
+}
