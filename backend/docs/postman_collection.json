@@ -1,0 +1,212 @@
+{
+  "info": {
+    "_postman_id": "darpan-civic-api-collection",
+    "name": "Darpan - Web3 Civic Complaint Platform",
+    "description": "Complete Postman collection for testing the Darpan Web3 Civic Complaint Platform APIs.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Health Check",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "http://localhost:5000/api/health",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "5000",
+          "path": ["api", "health"]
+        }
+      }
+    },
+    {
+      "name": "Auth - Demo Citizen Login",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "http://localhost:5000/api/auth/demo/citizen",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "5000",
+          "path": ["api", "auth", "demo", "citizen"]
+        }
+      }
+    },
+    {
+      "name": "Auth - Demo Officer Login",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "http://localhost:5000/api/auth/demo/officer",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "5000",
+          "path": ["api", "auth", "demo", "officer"]
+        }
+      }
+    },
+    {
+      "name": "Issues - Create Issue",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Content-Type", "value": "application/json" },
+          { "key": "X-Wallet-Address", "value": "0x90F79bf6EB2c4f870365E785982E1f101E93b906" },
+          { "key": "X-Role", "value": "citizen" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"title\": \"Deep pothole on 100ft road\",\n  \"description\": \"Large crater posing risk to bikers\",\n  \"category\": \"Roads\",\n  \"latitude\": 12.971598,\n  \"longitude\": 77.594562,\n  \"severity\": 4,\n  \"ipfsCid\": \"bafybeigdyrzt5sfp7udm7hu76uh7y26nf3efuylqabf3oclgtqy55fbzdi\"\n}"
+        },
+        "url": {
+          "raw": "http://localhost:5000/api/issues",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "5000",
+          "path": ["api", "issues"]
+        }
+      }
+    },
+    {
+      "name": "Issues - Nearby Feed (Geohash & Priority)",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "http://localhost:5000/api/issues/nearby?lat=12.971598&lon=77.594562&radiusKm=10",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "5000",
+          "path": ["api", "issues", "nearby"],
+          "query": [
+            { "key": "lat", "value": "12.971598" },
+            { "key": "lon", "value": "77.594562" },
+            { "key": "radiusKm", "value": "10" }
+          ]
+        }
+      }
+    },
+    {
+      "name": "Community - Upvote Issue",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Content-Type", "value": "application/json" },
+          { "key": "X-Wallet-Address", "value": "0x90F79bf6EB2c4f870365E785982E1f101E93b906" },
+          { "key": "X-Role", "value": "citizen" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"voteType\": \"upvote\"\n}"
+        },
+        "url": {
+          "raw": "http://localhost:5000/api/issues/1/vote",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "5000",
+          "path": ["api", "issues", "1", "vote"]
+        }
+      }
+    },
+    {
+      "name": "Officer - Start Work",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Content-Type", "value": "application/json" },
+          { "key": "X-Wallet-Address", "value": "0x70997970C51812dc3A010C7d01b50e0d17dc79C8" },
+          { "key": "X-Role", "value": "officer" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"issueId\": 1,\n  \"note\": \"Repair team deployed\"\n}"
+        },
+        "url": {
+          "raw": "http://localhost:5000/api/officer/start-work",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "5000",
+          "path": ["api", "officer", "start-work"]
+        }
+      }
+    },
+    {
+      "name": "Officer - Resolve Issue",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Content-Type", "value": "application/json" },
+          { "key": "X-Wallet-Address", "value": "0x70997970C51812dc3A010C7d01b50e0d17dc79C8" },
+          { "key": "X-Role", "value": "officer" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"issueId\": 1,\n  \"proofPhotoHash\": \"bafyresolved_photo_proof_hash\",\n  \"note\": \"Pothole filled and sealed\"\n}"
+        },
+        "url": {
+          "raw": "http://localhost:5000/api/officer/resolve",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "5000",
+          "path": ["api", "officer", "resolve"]
+        }
+      }
+    },
+    {
+      "name": "Verification - Vote Satisfied (+1 Star)",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Content-Type", "value": "application/json" },
+          { "key": "X-Wallet-Address", "value": "0x90F79bf6EB2c4f870365E785982E1f101E93b906" },
+          { "key": "X-Role", "value": "citizen" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"satisfied\": true\n}"
+        },
+        "url": {
+          "raw": "http://localhost:5000/api/issues/1/verify",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "5000",
+          "path": ["api", "issues", "1", "verify"]
+        }
+      }
+    },
+    {
+      "name": "Public Verification & Audit Trail",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "http://localhost:5000/api/issues/1/public-verification",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "5000",
+          "path": ["api", "issues", "1", "public-verification"]
+        }
+      }
+    },
+    {
+      "name": "Privacy - Right to Erasure",
+      "request": {
+        "method": "DELETE",
+        "header": [
+          { "key": "X-Wallet-Address", "value": "0x90F79bf6EB2c4f870365E785982E1f101E93b906" },
+          { "key": "X-Role", "value": "citizen" }
+        ],
+        "url": {
+          "raw": "http://localhost:5000/api/users/erasure",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "5000",
+          "path": ["api", "users", "erasure"]
+        }
+      }
+    }
+  ]
+}

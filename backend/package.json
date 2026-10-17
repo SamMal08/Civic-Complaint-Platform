@@ -1,0 +1,25 @@
+{
+  "name": "darpan-backend",
+  "version": "1.0.0",
+  "description": "Standalone backend & Web3 services for Darpan Civic Complaint Platform",
+  "main": "src/server.js",
+  "scripts": {
+    "start": "node src/server.js",
+    "dev": "node src/server.js",
+    "seed": "node scripts/seed.js",
+    "start:all": "node scripts/start-all.js",
+    "test": "node test/api.test.js"
+  },
+  "dependencies": {
+    "cors": "^2.8.5",
+    "dotenv": "^16.4.7",
+    "ethers": "^6.13.5",
+    "express": "^4.21.2",
+    "jsonwebtoken": "^9.0.2",
+    "mongodb-memory-server": "^10.1.3",
+    "mongoose": "^8.9.5",
+    "ngeohash": "^0.6.3",
+    "swagger-jsdoc": "^6.2.8",
+    "swagger-ui-express": "^5.0.1"
+  }
+}
