@@ -2,6 +2,7 @@ const Issue = require("../models/Issue");
 const User = require("../models/User");
 const Timeline = require("../models/Timeline");
 const Vote = require("../models/Vote");
+const { detectDuplicates } = require("../services/duplicateService");
 const {
   computeContentHash,
   reportIssueOnChain,
@@ -335,25 +336,14 @@ async function validateWithAi(req, res, next) {
     const categorySuggestion = await aiService.suggestCategory({ title, description });
     const imageAnalysis = await aiService.analyzeImage({ imageCidOrUrl: imageCid, description, category });
 
-    let duplicateCheck = { isDuplicate: false };
+    let duplicateCheck = { isDuplicate: false, matches: [] };
     if (latitude !== undefined && longitude !== undefined) {
-      const nearbyIssues = await Issue.find({
-        location: {
-          $nearSphere: {
-            $geometry: {
-              type: "Point",
-              coordinates: [parseFloat(longitude), parseFloat(latitude)]
-            },
-            $maxDistance: 500
-          }
-        }
-      });
-      duplicateCheck = await aiService.detectDuplicates({
+      duplicateCheck = await detectDuplicates({
         title,
         description,
+        category,
         latitude: parseFloat(latitude),
-        longitude: parseFloat(longitude),
-        nearbyIssues
+        longitude: parseFloat(longitude)
       });
     }
 

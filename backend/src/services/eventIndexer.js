@@ -35,8 +35,8 @@ async function syncPriorityScore(issueId) {
  */
 async function handleIssueReported(id, reporter, contentHash, ipfsCid, category, latitude, longitude, geohash, severity, timestamp, event) {
   const issueId = Number(id);
-  const txHash = event.log.transactionHash;
-  const blockNumber = event.log.blockNumber;
+  const txHash = (event.log || event).transactionHash;
+  const blockNumber = (event.log || event).blockNumber;
 
   let issue = await Issue.findOne({ issueId });
   if (!issue) {
@@ -81,8 +81,8 @@ async function handleIssueReported(id, reporter, contentHash, ipfsCid, category,
 async function handleIssueStatusUpdated(id, previousStatus, newStatus, actor, note, timestamp, event) {
   const issueId = Number(id);
   const statusStr = STATUS_MAP[Number(newStatus)] || "Reported";
-  const txHash = event.log.transactionHash;
-  const blockNumber = event.log.blockNumber;
+  const txHash = (event.log || event).transactionHash;
+  const blockNumber = (event.log || event).blockNumber;
 
   await Issue.findOneAndUpdate(
     { issueId },
@@ -106,7 +106,7 @@ async function handleIssueStatusUpdated(id, previousStatus, newStatus, actor, no
  */
 async function handleIssueVoted(id, voter, previousVote, newVote, upvotes, downvotes, event) {
   const issueId = Number(id);
-  const txHash = event.log.transactionHash;
+  const txHash = (event.log || event).transactionHash;
   const voteType = Number(newVote) === 1 ? "upvote" : "downvote";
 
   await Issue.findOneAndUpdate(
@@ -135,7 +135,7 @@ async function handleIssueVoted(id, voter, previousVote, newVote, upvotes, downv
  */
 async function handleVerificationVoteCast(id, citizen, satisfied, satisfiedVotes, unsatisfiedVotes, event) {
   const issueId = Number(id);
-  const txHash = event.log.transactionHash;
+  const txHash = (event.log || event).transactionHash;
 
   await Issue.findOneAndUpdate(
     { issueId },
@@ -168,8 +168,8 @@ async function handleVerificationVoteCast(id, citizen, satisfied, satisfiedVotes
 async function handleVerificationFinalized(id, finalStatus, satisfiedVotes, unsatisfiedVotes, note, event) {
   const issueId = Number(id);
   const statusStr = STATUS_MAP[Number(finalStatus)] || "Closed";
-  const txHash = event.log.transactionHash;
-  const blockNumber = event.log.blockNumber;
+  const txHash = (event.log || event).transactionHash;
+  const blockNumber = (event.log || event).blockNumber;
 
   await Issue.findOneAndUpdate(
     { issueId },
@@ -207,8 +207,8 @@ async function handleOfficerAssigned(id, officer, assignedBy, timestamp, event) 
  */
 async function handleEvidenceAdded(id, officer, evidenceHash, note, timestamp, event) {
   const issueId = Number(id);
-  const txHash = event.log.transactionHash;
-  const blockNumber = event.log.blockNumber;
+  const txHash = (event.log || event).transactionHash;
+  const blockNumber = (event.log || event).blockNumber;
 
   const issue = await Issue.findOne({ issueId });
   const statusStr = issue ? issue.status : "InProgress";
